@@ -62,4 +62,4 @@ const getAppleStocksDetails = (partID) => {
   getAppleStocksDetails(partID);
 })();
 
-cron.schedule("*/5 * * * *", () => {});
+// cron.schedule("*/5 * * * *", () => {});
