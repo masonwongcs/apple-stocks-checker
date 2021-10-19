@@ -1,4 +1,3 @@
-const cron = require("node-cron");
 const axios = require("axios");
 const nodemailer = require("nodemailer");
 const dotenv = require("dotenv");
@@ -12,13 +11,26 @@ const to2 = process.env.TO2;
 const mailList = [to1, to2];
 
 const sendMail = (message) => {
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => {
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
         user: username,
         pass: password,
       },
+    });
+
+    await new Promise((resolve, reject) => {
+      // verify connection configuration
+      transporter.verify(function (error, success) {
+        if (error) {
+          console.log(error);
+          reject(error);
+        } else {
+          console.log("Server is ready to take our messages");
+          resolve(success);
+        }
+      });
     });
 
     const mailOptions = {
@@ -46,7 +58,7 @@ const sendMail = (message) => {
   });
 };
 
-const getAppleStocksDetails = (partID) => {
+const getAppleStocksDetails = () => {
   return new Promise((resolve) => {
     axios
       .get(
@@ -68,7 +80,7 @@ const getAppleStocksDetails = (partID) => {
           sendMail("MKGP3ZP/A is available now.");
           resolve("MKGP3ZP/A is available now.");
         } else {
-          sendMail("No Stocks");
+          // sendMail("No Stocks");
           resolve("No Stocks");
         }
 
@@ -93,16 +105,17 @@ const getAppleStocksDetails = (partID) => {
   });
 };
 
-cron.schedule("5 * * * *", () => {
-  getAppleStocksDetails();
-});
-
-module.exports = async (req, res) => {
+const checkStock = async (req, res) => {
   const partID = req.query.partID;
-  const response = await getAppleStocksDetails(partID);
+  const response = await getAppleStocksDetails();
 
   console.log(response);
   res.json({
     message: response,
   });
+};
+
+module.exports = {
+  checkStock,
+  getAppleStocksDetails,
 };
