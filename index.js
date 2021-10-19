@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const port = process.env.PORT || 3000;
-const checkStock = require("./api/fetch");
+const checkStock = require("./fetch");
 
 app.get("/", checkStock);
 
