@@ -80,7 +80,7 @@ const getAppleStocksDetails = () => {
           sendMail("MKGP3ZP/A is available now.");
           resolve("MKGP3ZP/A is available now.");
         } else {
-          // sendMail("No Stocks");
+          sendMail("No Stocks");
           resolve("No Stocks");
         }
 
