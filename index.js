@@ -6,7 +6,7 @@ const { checkStock, getAppleStocksDetails } = require("./fetch");
 
 app.get("/", checkStock);
 
-cron.schedule("* * * * *", () => {
+cron.schedule("5 * * * *", () => {
   getAppleStocksDetails();
 });
 
