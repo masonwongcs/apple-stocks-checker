@@ -62,7 +62,7 @@ const sendMail = (message) => {
 const getAppleStocksDetails = (partID) => {
   // 14-inch MKGP3ZP/A
   // 13-inch MYDC2ZP/A
-  const parts = partID ? partID : "MYDC2ZP/A";
+  const parts = partID ? partID : "MKGP3ZP/A";
   return new Promise((resolve) => {
     axios
       .get(
