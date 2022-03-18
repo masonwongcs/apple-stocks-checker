@@ -145,10 +145,12 @@ const getAppleStocksDetails = (_partId) => {
 const checkStock = async (req, res) => {
   const partID = req.query.partID;
   const response = await getAppleStocksDetails(partID);
+  const time = new Date().toLocaleTimeString();
 
   console.log(response);
   res.json({
     message: response,
+    time,
   });
 };
 
