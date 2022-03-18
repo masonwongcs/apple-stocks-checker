@@ -8,6 +8,7 @@ const password = process.env.PASSWORD;
 const to1 = process.env.TO;
 const to2 = process.env.TO2;
 const to3 = process.env.TO3;
+const partId = process.env.PART_ID;
 
 const mailList = [to1, to2, to3];
 
@@ -59,10 +60,10 @@ const sendMail = (message) => {
   });
 };
 
-const getAppleStocksDetails = (partID) => {
+const getAppleStocksDetails = (_partId) => {
   // 14-inch MKGP3ZP/A
   // 13-inch MYDC2ZP/A
-  const parts = partID ? partID : "MKGP3ZP/A";
+  const parts = _partId ? _partId : partId;
   return new Promise((resolve) => {
     axios
       .get(
