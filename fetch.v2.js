@@ -1,56 +1,21 @@
 const axios = require("axios");
+const { Resend } = require("resend");
 const dotenv = require("dotenv");
-const nodemailer = require("nodemailer");
 dotenv.config();
 
-const username = process.env.USERNAME;
-const password = process.env.PASSWORD;
+const resendFromEmail = process.env.RESEND_FROM_EMAIL;
+const resendAPIKey = process.env.RESEND_API_KEY;
 
 const sendMail = (title, message, email) => {
-  return new Promise(async (resolve) => {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: username,
-        pass: password,
-      },
-    });
+  const resend = new Resend(resendAPIKey);
 
-    await new Promise((resolve, reject) => {
-      // verify connection configuration
-      transporter.verify(function (error, success) {
-        if (error) {
-          console.log(error);
-          reject(error);
-        } else {
-          console.log("Server is ready to take our messages");
-          resolve(success);
-        }
-      });
-    });
+  console.log(email)
 
-    const mailOptions = {
-      from: "masonwongcs@gmail.com",
-      to: email,
-      subject: title + "is available",
-      text: message,
-    };
-
-    transporter.sendMail(mailOptions, function (error, info) {
-      if (error) {
-        console.log(error);
-        resolve({
-          error: true,
-          message: error,
-        });
-      } else {
-        console.log("Email sent: " + info.response);
-        resolve({
-          error: false,
-          message: "Email sent: " + info.response,
-        });
-      }
-    });
+  resend.emails.send({
+    from: `Stock Update <${resendFromEmail}>`,
+    to: email,
+    subject: title + "is available",
+    html: `<pre>${message}</pre>`,
   });
 };
 
