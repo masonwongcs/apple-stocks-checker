@@ -1,7 +1,6 @@
-const axios = require("axios");
-const { Resend } = require("resend");
-const dotenv = require("dotenv");
-dotenv.config();
+import { NextResponse } from "next/server";
+import axios from "axios";
+import { Resend } from "resend";
 
 const resendFromEmail = process.env.RESEND_FROM_EMAIL;
 const resendAPIKey = process.env.RESEND_API_KEY;
@@ -9,7 +8,7 @@ const resendAPIKey = process.env.RESEND_API_KEY;
 const sendMail = (title, message, email) => {
   const resend = new Resend(resendAPIKey);
 
-  console.log(email)
+  console.log(email);
 
   resend.emails.send({
     from: `Stock Update <${resendFromEmail}>`,
@@ -102,13 +101,14 @@ const getAppleStocksDetails = (partId, email) => {
   });
 };
 
-const checkStock = async (req, res) => {
-  const partID = req.query.partID;
-  const email = req.query.email;
+export async function GET(request) {
+  const partID = request.nextUrl.searchParams.get(["partID"]);
+  const email = request.nextUrl.searchParams.get(["email"]);
+
   const time = new Date().toLocaleTimeString();
 
-  if (!(partID && email)) {
-    res.json({
+  if (!partID || !email) {
+    return NextResponse.json({
       message: "Please enter part ID and email",
       time,
     });
@@ -117,12 +117,8 @@ const checkStock = async (req, res) => {
   const response = await getAppleStocksDetails(partID, email);
 
   console.log(response);
-  res.json({
+  return NextResponse.json({
     message: response,
+    time,
   });
-};
-
-module.exports = {
-  checkStock,
-  getAppleStocksDetails,
-};
+}
