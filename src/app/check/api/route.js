@@ -1,21 +1,29 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
-import { Resend } from "resend";
 
 const resendFromEmail = process.env.RESEND_FROM_EMAIL;
 const resendAPIKey = process.env.RESEND_API_KEY;
 
-const sendMail = (title, message, email) => {
-  const resend = new Resend(resendAPIKey);
-
+const sendMail = async (title, message, email) => {
   console.log(email);
 
-  resend.emails.send({
-    from: `Stock Update <${resendFromEmail}>`,
-    to: email,
-    subject: title + "is available",
-    html: `<pre>${message}</pre>`,
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${resendAPIKey}`,
+    },
+    body: JSON.stringify({
+      from: `Stock Update <${resendFromEmail}>`,
+      to: email,
+      subject: title + "is available",
+      html: `<pre>${message}</pre>`,
+    }),
   });
+
+  const data = await res.json();
+
+  console.log(data);
 };
 
 const getAppleStocksDetails = (partId, email) => {
@@ -73,7 +81,7 @@ const getAppleStocksDetails = (partId, email) => {
             .map(({ name }) => `${name}`)
             .join("\n")}`;
 
-          sendMail(parts, message, email);
+          await sendMail(parts, message, email);
           resolve(message);
         } else {
           // sendMail("No Stocks");
