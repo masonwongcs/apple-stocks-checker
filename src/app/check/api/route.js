@@ -4,7 +4,17 @@ import axios from "axios";
 const resendFromEmail = process.env.RESEND_FROM_EMAIL;
 const resendAPIKey = process.env.RESEND_API_KEY;
 
-const sendMail = async (title, message, email) => {
+const productUrlFor = (partId) =>
+  `https://www.apple.com/sg/shop/product/${partId}`;
+
+const escapeHtml = (value) =>
+  value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+
+const sendMail = async (title, message, email, productUrl) => {
   console.log(email);
 
   const res = await fetch("https://api.resend.com/emails", {
@@ -17,7 +27,7 @@ const sendMail = async (title, message, email) => {
       from: `Stock Update <${resendFromEmail}>`,
       to: email,
       subject: title + "is available",
-      html: `<pre>${message}</pre>`,
+      html: `<pre>${escapeHtml(message)}</pre><p><a href="${escapeHtml(productUrl)}">Open in Apple Store</a></p>`,
     }),
   });
 
@@ -83,12 +93,13 @@ const getAppleStocksDetails = (partId, email) => {
         console.log(isBuyable);
 
         if (isBuyable) {
+          const productUrl = productUrlFor(parts);
           const message = `${parts} is available to pickup at: \n${partsAvailability
             .filter(({ available }) => available)
             .map(({ name }) => `${name}`)
-            .join("\n")}`;
+            .join("\n")}\n\n${productUrl}`;
 
-          await sendMail(parts, message, email);
+          await sendMail(parts, message, email, productUrl);
           resolve(message);
         } else {
           // sendMail("No Stocks");
