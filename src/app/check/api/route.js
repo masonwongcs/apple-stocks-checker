@@ -120,17 +120,8 @@ const getAppleStocksDetails = (partId, email) => {
 export const dynamic = "force-dynamic";
 
 export async function GET(request) {
-  const cronSecret = process.env.CRON_SECRET;
-  if (
-    cronSecret &&
-    request.headers.get("authorization") !== `Bearer ${cronSecret}`
-  ) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
-  const partID =
-    request.nextUrl.searchParams.get("partID") ?? process.env.PART_ID;
-  const email = request.nextUrl.searchParams.get("email") ?? process.env.TO;
+  const partID = request.nextUrl.searchParams.get("partID");
+  const email = request.nextUrl.searchParams.get("email");
 
   const time = new Date().toLocaleTimeString();
 
