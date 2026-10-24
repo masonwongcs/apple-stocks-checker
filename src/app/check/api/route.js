@@ -28,22 +28,30 @@ const sendMail = async (title, message, email) => {
 
 const getAppleStocksDetails = (partId, email) => {
   const parts = partId;
-  return new Promise((resolve) => {
-    axios
-      .get(
-        `https://www.apple.com/sg/shop/fulfillment-messages?parts.0=${parts}&location=210684&mt=regular&_=${Date.now()}`
-        // "https://www.apple.com/sg/shop/fulfillment-messages?parts.0=MKGP3ZP%2FA&location=210684&mt=regular&_=1634994349383",
-        // `https://www.apple.com/sg/shop/fulfillment-messages?parts.0=MYDC2ZP%2FA&parts.1=MKGP3ZP%2FA&parts.2=MKGR3ZP%2FA&postalCode=210684&geoLocated=false&mt=regular&store=R633&_=1634613330544`
-        // `https://www.apple.com/sg/shop/fulfillment-messages?parts.0=${partID}&searchNearby=true&mt=regular&store=R633&_=${Date.now()}`
-        // `https://www.apple.com/sg/shop/retail/pickup-message?parts.0=${partID}&searchNearby=true&store=R669`
-      )
-      .then(async (response) => {
-        const data = response.data.body;
-        const {
-          content: { deliveryMessage, pickupMessage },
-        } = data;
+  const url = new URL("https://www.apple.com/sg/shop/retail/pickup-message");
+  url.searchParams.set("pl", "true");
+  url.searchParams.set("parts.0", parts);
+  url.searchParams.set("location", "210684");
 
-        const stores = pickupMessage.stores;
+  return new Promise((resolve, reject) => {
+    axios
+      .get(url.toString(), {
+        headers: {
+          Accept: "application/json, text/javascript, */*; q=0.01",
+          "Accept-Language": "en-SG,en;q=0.9",
+          Referer: "https://www.apple.com/sg/shop/buy-iphone",
+          "User-Agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        },
+        timeout: 15000,
+      })
+      .then(async (response) => {
+        const stores = response.data?.body?.stores;
+
+        if (!Array.isArray(stores)) {
+          reject(new Error("Apple returned an unexpected pickup response"));
+          return;
+        }
 
         const partsAvailability = stores.map((store) => {
           // console.log(store)
@@ -55,8 +63,7 @@ const getAppleStocksDetails = (partId, email) => {
           const {
             pickupDisplay, // "available"
             pickupSearchQuote, // "Available Today"
-            storeSelectionEnabled,
-          } = partsAvailability[parts];
+          } = partsAvailability?.[parts] ?? {};
 
           const isAvailable =
             pickupDisplay === "available" &&
@@ -105,13 +112,25 @@ const getAppleStocksDetails = (partId, email) => {
         //   console.log("No Stock");
         //   resolve("No Stock");
         // }
-      });
+      })
+      .catch(reject);
   });
 };
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request) {
-  const partID = request.nextUrl.searchParams.get(["partID"]);
-  const email = request.nextUrl.searchParams.get(["email"]);
+  const cronSecret = process.env.CRON_SECRET;
+  if (
+    cronSecret &&
+    request.headers.get("authorization") !== `Bearer ${cronSecret}`
+  ) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  const partID =
+    request.nextUrl.searchParams.get("partID") ?? process.env.PART_ID;
+  const email = request.nextUrl.searchParams.get("email") ?? process.env.TO;
 
   const time = new Date().toLocaleTimeString();
 
@@ -122,11 +141,25 @@ export async function GET(request) {
     });
   }
 
-  const response = await getAppleStocksDetails(partID, email);
+  try {
+    const response = await getAppleStocksDetails(partID, email);
 
-  console.log(response);
-  return NextResponse.json({
-    message: response,
-    time,
-  });
+    console.log(response);
+    return NextResponse.json({
+      message: response,
+      time,
+    });
+  } catch (error) {
+    const status = error.response?.status;
+    console.error("Apple stock check failed", status ?? error.message);
+    return NextResponse.json(
+      {
+        message: status
+          ? `Apple stock check failed (${status})`
+          : "Apple stock check failed",
+        time,
+      },
+      { status: 502 }
+    );
+  }
 }
